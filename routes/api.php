@@ -1,7 +1,9 @@
 <?php
 
 use App\Http\Controllers\AuthenticationController;
+use App\Http\Controllers\ForgotPasswordController;
 use Illuminate\Http\Request;
+use Illuminate\Routing\RouteGroup;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/user', function (Request $request) {
@@ -12,5 +14,13 @@ Route::post('/register', [AuthenticationController::class, 'register']);
 Route::post('/check-otp-register', [AuthenticationController::class, 'verifyOtp']);
 Route::post('/resend-otp', [AuthenticationController::class, 'resendOtp']);
 Route::post('/verify-register', [AuthenticationController::class, 'verifyRegister']);
+
+Route::prefix('/forgot-password')->group(function () {
+    Route::post('/request', [ForgotPasswordController::class, 'request']);
+    Route::post('/check-otp', [ForgotPasswordController::class, 'verifyOtp']);
+    Route::post('/resend-otp', [ForgotPasswordController::class, 'resendOtp']);
+    Route::post('/reset-password', [ForgotPasswordController::class, 'resetPassword']);
+});
+
 
 Route::post('/login', [AuthenticationController::class, 'login']);
