@@ -65,12 +65,12 @@ class Product extends Model
 
     public function getRatingAttribute()
     {
-        return round($this->reviews()->avg('rating'), 2);
+        return round($this->reviews->avg('star_seller'), 2);
     }
 
     public function getRatingCountAttribute()
     {
-        return (float) $this->reviews()->count();
+        return (float) $this->reviews->count();
     }
 
     public function getPriceDiscountPercentageAttribute()

@@ -203,12 +203,11 @@ class AuthenticationController extends Controller
         }
 
         $userPassword = $user->password;
-
         if (Hash::check(request()->password, $userPassword)) {
-            $token = $user->createToken('auth_token')->plainTextToken;
+            $token = $user->createToken(config('app.name'))->plainTextToken;
 
             return ResponseFormatter::success([
-                'is_sent' => true
+                'token' => $token
             ]);
         }
 
