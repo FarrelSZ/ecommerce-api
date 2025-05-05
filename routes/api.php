@@ -2,9 +2,11 @@
 
 use App\Http\Controllers\AddressController;
 use App\Http\Controllers\AuthenticationController;
+use App\Http\Controllers\CartController;
 use App\Http\Controllers\ForgotPasswordController;
 use App\Http\Controllers\HomeController;
 use App\Http\Controllers\ProfileController;
+use App\Models\Cart\Cart;
 use Illuminate\Http\Request;
 use Illuminate\Routing\RouteGroup;
 use Illuminate\Support\Facades\Route;
@@ -45,4 +47,11 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('product/{slug}', [HomeController::class, 'getProductDetail']);
     Route::get('product/{slug}/review', [HomeController::class, 'getProductReview']);
     Route::get('seller/{username}', [HomeController::class, 'getSellerDetail']);
+
+    Route::prefix('cart')->group(function () {
+        Route::get('/', [CartController::class, 'getCart']);
+        Route::post('/', [CartController::class, 'addToCart']);
+        Route::delete('/{uuid}', [CartController::class, 'removeItemFromCart']);
+        Route::patch('/{uuid}', [CartController::class, 'updateItemFromCart']);
+    });
 });
