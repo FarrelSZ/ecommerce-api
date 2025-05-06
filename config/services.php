@@ -28,6 +28,11 @@ return [
         'client_id' => env('GOOGLE_CLIENT'),
     ],
 
+    'rajaongkir' => [
+        'base_url' => 'https://rajaongkir.komerce.id/api/v1/',
+        'key' => env('RAJAONGKIR_KEY'),
+    ],
+
     'slack' => [
         'notifications' => [
             'bot_user_oauth_token' => env('SLACK_BOT_USER_OAUTH_TOKEN'),

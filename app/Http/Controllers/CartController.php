@@ -4,9 +4,11 @@ namespace App\Http\Controllers;
 
 use App\Models\Cart\Cart;
 use App\Models\Product\Product;
+use App\Models\Voucher;
 use App\ResponseFormatter;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Validator;
 
 class CartController extends Controller
@@ -38,20 +40,20 @@ class CartController extends Controller
         }
 
         // Calculate voucher
-        // if ($cart->voucher != null) {
-        //     $voucher = $cart->voucher;
-        //     if ($voucher->voucher_type == 'discount') {
-        //         $cart->voucher_value = $voucher->discount_cashback_type == 'percentage' ? $cart->items->sum('total') * $voucher->discount_cashback_value / 100 : $voucher->discount_cashback_value;
-        //         if (!is_null($voucher->discount_cashback_max) && $cart->voucher_value > $voucher->discount_cashback_max) {
-        //             $cart->voucher_value = $voucher->discount_cashback_max;
-        //         }
-        //     } elseif ($voucher->voucher_type == 'cashback') {
-        //         $cart->voucher_cashback = $voucher->discount_cashback_type == 'percentage' ? $cart->items->sum('total') * $voucher->discount_cashback_value / 100 : $voucher->discount_cashback_value;
-        //         if (!is_null($voucher->discount_cashback_max) && $cart->voucher_cashback > $voucher->discount_cashback_max) {
-        //             $cart->voucher_cashback = $voucher->discount_cashback_max;
-        //         }
-        //     }
-        // }
+        if ($cart->voucher != null) {
+            $voucher = $cart->voucher;
+            if ($voucher->voucher_type == 'discount') {
+                $cart->voucher_value = $voucher->discount_cashback_type == 'percentage' ? $cart->items->sum('total') * $voucher->discount_cashback_value / 100 : $voucher->discount_cashback_value;
+                if (!is_null($voucher->discount_cashback_max) && $cart->voucher_value > $voucher->discount_cashback_max) {
+                    $cart->voucher_value = $voucher->discount_cashback_max;
+                }
+            } elseif ($voucher->voucher_type == 'cashback') {
+                $cart->voucher_cashback = $voucher->discount_cashback_type == 'percentage' ? $cart->items->sum('total') * $voucher->discount_cashback_value / 100 : $voucher->discount_cashback_value;
+                if (!is_null($voucher->discount_cashback_max) && $cart->voucher_cashback > $voucher->discount_cashback_max) {
+                    $cart->voucher_cashback = $voucher->discount_cashback_max;
+                }
+            }
+        }
 
         // Recalculate total
         $cart->total = ($cart->items->sum('total')) + $cart->courier_price + $cart->service_fee;
@@ -159,5 +161,216 @@ class CartController extends Controller
         ]);
 
         return $this->getCart();
+    }
+
+    public function getVoucher()
+    {
+        $vouchers = Voucher::active()->public()->get();
+
+        return ResponseFormatter::success($vouchers->pluck('api_response'));
+    }
+    public function applyVoucher()
+    {
+        $validator = Validator::make(request()->all(), [
+            'voucher_code' => 'required|exists:vouchers,code',
+
+        ]);
+
+        if ($validator->fails()) {
+            return ResponseFormatter::error(400, $validator->errors());
+        }
+
+        $voucher = Voucher::where('code', request()->voucher_code)->firstOrFail();
+        if ($voucher->start_date < now() || $voucher->end_date > now()) {
+            return ResponseFormatter::error(400, null, [
+                'Voucher cannot be used now!'
+            ]);
+        }
+
+        $cart = $this->getOrCreateCart();
+        if (!is_null($voucher->seller_id) && $cart->items->count() > 0) {
+            $sellerId = $cart->items->first()->product->seller_id;
+            if ($sellerId != $voucher->seller_id) {
+                return ResponseFormatter::error(400, null, [
+                    'Vouchers cannot be used by sellers in the shopping cart!'
+                ]);
+            }
+        }
+
+        $cart->voucher_id = $voucher->id;
+        $cart->voucher_value = null;
+        $cart->voucher_cashback = null;
+        $cart->save();
+
+        return $this->getCart();
+    }
+    public function removeVoucher()
+    {
+        $cart = $this->getOrCreateCart();
+        $cart->voucher_id = null;
+        $cart->voucher_value = null;
+        $cart->voucher_cashback = null;
+        $cart->save();
+
+        return $this->getCart();
+    }
+
+    public function updateAddress()
+    {
+        $validator = Validator::make(request()->all(), [
+            'uuid' => 'required|exists:addresses,uuid',
+
+        ]);
+
+        if ($validator->fails()) {
+            return ResponseFormatter::error(400, $validator->errors());
+        }
+
+        $cart = $this->getOrCreateCart();
+        $cart->address_id = Auth::user()->addresses()->where('uuid', request()->uuid)->firstOrFail()->id;
+        $cart->save();
+
+        return $this->getCart();
+    }
+
+    public function getShipping()
+    {
+        $cart = $this->getOrCreateCart();
+
+        // Validasi courier: jne|pos
+        $validator = Validator::make(request()->all(), [
+            'courier' => 'required|in:jne,tiki',
+        ]);
+
+        if ($validator->fails()) {
+            return ResponseFormatter::error(400, $validator->errors());
+        }
+
+        // Validasi item di keranjang belanja
+        if ($cart->items->count() == 0) {
+            return ResponseFormatter::error(400, null, [
+                'Keranjang belanja kosong!'
+            ]);
+        }
+
+        // Validasi bahwa seller sudah mengisi alamat dia
+        $seller = $cart->items->first()->product->seller;
+        $sellerAddress = $seller->addresses()->where('is_default', true)->first();
+        if (is_null($sellerAddress)) {
+            return ResponseFormatter::error(400, null, [
+                'Alamat seller belum diisi'
+            ]);
+        }
+
+        // Validasi address di cart
+        if (is_null($cart->address)) {
+            return ResponseFormatter::error(400, null, [
+                'Alamat tujuan belum diisi'
+            ]);
+        }
+
+        $weight = $cart->items->sum(function ($item) {
+            return $item->qty * $item->product->weight;
+        });
+
+        $result = $this->getShippingOptions(
+            $sellerAddress->city->external_id,
+            $cart->address->city->external_id,
+            $weight,
+            request()->courier
+        );
+
+        return ResponseFormatter::success($result);
+    }
+
+    public function updateShippingFee()
+    {
+        $validator = Validator::make(request()->all(), [
+            'courier' => 'required|in:jne,tiki',
+            'service' => 'required',
+        ]);
+
+        if ($validator->fails()) {
+            return ResponseFormatter::error(400, $validator->errors());
+        }
+
+        $cart = $this->getOrCreateCart();
+
+        // Validasi item di keranjang belanja
+        if ($cart->items->count() == 0) {
+            return ResponseFormatter::error(400, null, [
+                'Cart is empty!'
+            ]);
+        }
+
+        // Validasi bahwa seller sudah mengisi alamat dia
+        $seller = $cart->items->first()->product->seller;
+        $sellerAddress = $seller->addresses()->where('is_default', true)->first();
+        if (is_null($sellerAddress)) {
+            return ResponseFormatter::error(400, null, [
+                'Address seller not yet filled'
+            ]);
+        }
+
+        // Validasi address di cart
+        if (is_null($cart->address)) {
+            return ResponseFormatter::error(400, null, [
+                'Address destination not yet filled'
+            ]);
+        }
+
+        $weight = $cart->items->sum(function ($item) {
+            return $item->qty * $item->product->weight;
+        });
+
+        $result = $this->getShippingOptions(
+            $sellerAddress->city->external_id,
+            $cart->address->city->external_id,
+            $weight,
+            request()->courier
+        );
+
+        $service = collect($result['cost'])->where('service', request()->service)->first();
+        if (is_null($service)) {
+            return ResponseFormatter::error(400, null, [
+                'Service not found'
+            ]);
+        }
+
+        $cart->courier = request()->courier;
+        $cart->courier_type = request()->service;
+        $cart->courier_estimation = $service['etd'];
+        $cart->courier_price = $service['value'];
+        $cart->save();
+
+        return $this->getCart();
+    }
+
+    private function getShippingOptions(int $origin, int $destination, float $weight, string $courier)
+    {
+        $response = Http::withHeaders([
+            'key' => config('services.rajaongkir.key')
+        ])->post(config('services.rajaongkir.base_url') . '/calculate', [
+            'origin' => $origin,
+            'destination' => $destination,
+            'weight' => $weight,
+            'courier' => $courier
+        ]);
+
+        $result = collect($response->object()->rajaongkir->results)->map(function ($item) {
+            return [
+                'service' => $item->name,
+                'cost' => collect($item->costs)->map(function ($cost) {
+                    return [
+                        'service' => $cost->service,
+                        'description' => $cost->description,
+                        'etd' => $cost->cost[0]->etd,
+                        'value' => $cost->cost[0]->value,
+                    ];
+                }),
+            ];
+        })[0];
+
+        return $result;
     }
 }
