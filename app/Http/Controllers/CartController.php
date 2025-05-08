@@ -337,6 +337,7 @@ class CartController extends Controller
             ]);
         }
 
+
         $cart->courier = request()->courier;
         $cart->courier_type = request()->service;
         $cart->courier_estimation = $service['etd'];
@@ -350,11 +351,11 @@ class CartController extends Controller
     {
         $response = Http::withHeaders([
             'key' => config('services.rajaongkir.key')
-        ])->post(config('services.rajaongkir.base_url') . '/calculate', [
+        ])->post(config('services.rajaongkir.base_url') . '/cost', [
             'origin' => $origin,
             'destination' => $destination,
             'weight' => $weight,
-            'courier' => $courier
+            'courier' => request()->courier
         ]);
 
         $result = collect($response->object()->rajaongkir->results)->map(function ($item) {

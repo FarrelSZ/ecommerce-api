@@ -29,7 +29,7 @@ return [
     ],
 
     'rajaongkir' => [
-        'base_url' => 'https://rajaongkir.komerce.id/api/v1/',
+        'base_url' => 'https://api.rajaongkir.com/starter',
         'key' => env('RAJAONGKIR_KEY'),
     ],
 
