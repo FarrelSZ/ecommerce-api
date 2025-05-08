@@ -56,7 +56,7 @@ class CartController extends Controller
         }
 
         // Recalculate total
-        $cart->total = ($cart->items->sum('total')) + $cart->courier_price + $cart->service_fee;
+        $cart->total = ($cart->items->sum('total')) + $cart->courier_price + $cart->service_fee - $cart->voucher_value;
         if ($cart->total < 0) {
             $cart->total = 0;
         }
@@ -181,7 +181,7 @@ class CartController extends Controller
         }
 
         $voucher = Voucher::where('code', request()->voucher_code)->firstOrFail();
-        if ($voucher->start_date < now() || $voucher->end_date > now()) {
+        if ($voucher->start_date > now() || $voucher->end_date < now()) {
             return ResponseFormatter::error(400, null, [
                 'Voucher cannot be used now!'
             ]);
