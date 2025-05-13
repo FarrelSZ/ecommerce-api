@@ -61,5 +61,7 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::post('/update-address', [CartController::class, 'updateAddress']);
         Route::get('/shipping', [CartController::class, 'getShipping']);
         Route::post('/shipping-fee', [CartController::class, 'updateShippingFee']);
+
+        Route::post('/checkout', [CartController::class, 'checkout']);
     });
 });

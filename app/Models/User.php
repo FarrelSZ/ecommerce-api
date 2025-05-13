@@ -4,6 +4,7 @@ namespace App\Models;
 
 // use Illuminate\Contracts\Auth\MustVerifyEmail;
 
+use App\Models\Order\Order;
 use App\Models\Product\Product;
 use App\Models\Product\Review;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -115,5 +116,9 @@ class User extends Authenticatable
     public function products()
     {
         return $this->hasMany(Product::class, 'seller_id');
+    }
+    public function orders()
+    {
+        return $this->hasMany(Order::class, 'user_id');
     }
 }

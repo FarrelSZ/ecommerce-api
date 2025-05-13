@@ -13,7 +13,6 @@ return new class extends Migration
     {
         Schema::create('reviews', function (Blueprint $table) {
             $table->id();
-            // $table->unsignedBigInteger('order_item_id')->nullable();
             $table->unsignedBigInteger('product_id');
             $table->unsignedBigInteger('user_id');
             $table->integer('star_seller');
@@ -25,7 +24,6 @@ return new class extends Migration
             $table->softDeletes();
             $table->timestamps();
 
-            // $table->foreign('order_item_id')->references('id')->on('order_items');
             $table->foreign('product_id')->references('id')->on('products');
             $table->foreign('user_id')->references('id')->on('users');
         });
