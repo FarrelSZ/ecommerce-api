@@ -11,10 +11,12 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Laravel\Sanctum\HasApiTokens;
+use Bavix\Wallet\Traits\HasWallet;
+use Bavix\Wallet\Interfaces\Wallet;
 
-class User extends Authenticatable
+class User extends Authenticatable implements Wallet
 {
-    use HasFactory, Notifiable, HasApiTokens;
+    use HasFactory, Notifiable, HasApiTokens, HasWallet;
 
     /**
      * The attributes that are mass assignable.
@@ -57,6 +59,7 @@ class User extends Authenticatable
         return [
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
+            'balance' => 'float',
         ];
     }
 
@@ -71,6 +74,7 @@ class User extends Authenticatable
             'store_name' => $this->store_name,
             'gender' => $this->gender,
             'birth_date' => $this->birth_date,
+            'balance' => (float) $this->balance,
         ];
     }
 

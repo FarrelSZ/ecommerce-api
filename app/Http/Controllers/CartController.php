@@ -453,5 +453,23 @@ class CartController extends Controller
 
             return $order;
         });
+        return ResponseFormatter::success($order->api_response_detail);
+    }
+
+    public function toggleCoin()
+    {
+        $cart = $this->getOrCreateCart();
+
+        $coin = 0;
+        if (request()->use == 1) {
+            $balance = Auth::user()->balance;
+            $maxCoin = $cart->items->sum('total') * 0.1;
+            $coin = $balance > $maxCoin ? $maxCoin : $balance;
+        }
+
+        $cart->pay_with_coin = $coin;
+        $cart->save();
+
+        return $this->getCart();
     }
 }

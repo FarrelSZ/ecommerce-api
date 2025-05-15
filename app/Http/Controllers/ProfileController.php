@@ -13,7 +13,7 @@ class ProfileController extends Controller
     {
         $user = Auth::user();
 
-        return ResponseFormatter::success($user);
+        return ResponseFormatter::success($user->api_response);
     }
 
 

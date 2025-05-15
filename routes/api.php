@@ -5,6 +5,7 @@ use App\Http\Controllers\AuthenticationController;
 use App\Http\Controllers\CartController;
 use App\Http\Controllers\ForgotPasswordController;
 use App\Http\Controllers\HomeController;
+use App\Http\Controllers\OrderController;
 use App\Http\Controllers\ProfileController;
 use App\Models\Cart\Cart;
 use Illuminate\Http\Request;
@@ -63,5 +64,13 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::post('/shipping-fee', [CartController::class, 'updateShippingFee']);
 
         Route::post('/checkout', [CartController::class, 'checkout']);
+        Route::post('/toggle-coin', [CartController::class, 'toggleCoin']);
+    });
+
+    Route::prefix('order')->group(function () {
+        Route::get('/', [OrderController::class, 'index']);
+        Route::get('/{uuid}', [OrderController::class, 'show']);
+        Route::post('/review/add', [OrderController::class, 'addReview']);
+        Route::post('/{uuid}/mark-done', [OrderController::class, 'markAsDone']);
     });
 });
