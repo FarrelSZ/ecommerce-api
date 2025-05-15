@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\ResponseFormatter;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
@@ -13,7 +14,30 @@ class OrderController extends Controller
             'seller',
             'address',
             'items',
-            'lastStatus',
+            'lastStatus'
         ]);
+
+        if (request()->last_status) {
+            $query->whereHas('lastStatus', function ($subQuery) {
+                $subQuery->where('status', request()->last_status);
+            });
+        }
+
+        if (request()->search) {
+            $query->whereHas('seller', function ($subQuery) {
+                $subQuery->where('store_name', 'LIKE', '%' . request()->search . '%');
+            })->orWhere('invoice_number', 'LIKE', '%' . request()->search . '%');
+
+            $productIds = \App\Models\Product\Product::where('name', 'LIKE', '%' . request()->search . '%')->pluck('id');
+            $query->orWhereHas('items', function ($subQuery) use ($productIds) {
+                $subQuery->whereIn('product_id', $productIds);
+            });
+        }
+
+        $orders = $query->paginate(request()->per_page ?? 10);
+
+        return ResponseFormatter::success($orders->through(function ($order) {
+            return $order->api_response;
+        }));
     }
 }
