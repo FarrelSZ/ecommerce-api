@@ -6,6 +6,6 @@
     <br>
     <br>
     @foreach ($order->items as $item)
-    {{ $item->product->name }} x {{ $item->qty }} = {{ $item->qty * $item->product->price }}<br>
-@endforeach
+        {{ $item->product->name }} x {{ $item->qty }} = {{ $item->qty * $item->product->price }}<br>
+    @endforeach
 @endsection
