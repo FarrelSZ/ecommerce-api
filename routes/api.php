@@ -7,9 +7,8 @@ use App\Http\Controllers\ForgotPasswordController;
 use App\Http\Controllers\HomeController;
 use App\Http\Controllers\OrderController;
 use App\Http\Controllers\ProfileController;
-use App\Models\Cart\Cart;
+use App\Http\Controllers\Seller\ProductController;
 use Illuminate\Http\Request;
-use Illuminate\Routing\RouteGroup;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/user', function (Request $request) {
@@ -72,5 +71,11 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/{uuid}', [OrderController::class, 'show']);
         Route::post('/review/add', [OrderController::class, 'addReview']);
         Route::post('/{uuid}/mark-done', [OrderController::class, 'markAsDone']);
+    });
+
+    Route::prefix('seller-dashboard')->group(function () {
+        Route::apiResource('product', ProductController::class)->except([
+            'show'
+        ]);
     });
 });

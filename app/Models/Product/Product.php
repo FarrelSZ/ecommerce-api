@@ -3,6 +3,7 @@
 namespace App\Models\Product;
 
 use App\Models\Category;
+use App\Models\Order\OrderItem;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -91,7 +92,7 @@ class Product extends Model
 
     public function getSaleCountAttribute()
     {
-        return 0;
+        return OrderItem::where('product_id', $this->id)->count();
     }
 
     public function getApiResponseExcerptAttribute()
