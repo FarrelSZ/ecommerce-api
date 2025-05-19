@@ -53,12 +53,12 @@ class Voucher extends Model
 
     public function orders()
     {
-        // return $this->hasMany(\App\Models\Order\Order::class, 'voucher_id');
+        return $this->hasMany(\App\Models\Order\Order::class, 'voucher_id');
     }
 
     public function getUsedCountAttribute()
     {
-        // return $this->orders()->count();
+        return $this->orders()->count();
     }
 
     public function getApiResponseSellerAttribute()
