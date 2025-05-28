@@ -52,6 +52,8 @@ E-Commerce API ini adalah backend RESTful API sederhana yang dibangun dengan Lar
 🔐 Otentikasi API
 API ini menggunakan Laravel Sanctum. Setelah login, user akan mendapatkan token Bearer untuk mengakses endpoint yang dilindungi.
 
+---
+
 📬 Contoh Endpoint
 | Method | Endpoint        | Keterangan              |
 | ------ | --------------- | ----------------------- |
@@ -61,8 +63,12 @@ API ini menggunakan Laravel Sanctum. Setelah login, user akan mendapatkan token 
 | POST   | `/api/products` | Tambah produk (admin)   |
 | GET    | `/api/orders`   | Daftar pesanan pengguna |
 
+---
+
 🧪 Testing & Dokumentasi API
 Gunakan Postman atau aplikasi sejenis untuk mencoba endpoint. Dokumentasi lengkap bisa ditambahkan melalui Postman collection atau Swagger (opsional).
+
+---
 
 ## License
 
