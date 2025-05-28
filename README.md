@@ -41,7 +41,7 @@ E-Commerce API ini adalah backend RESTful API sederhana yang dibangun dengan Lar
 
 ## 🛠️ Teknologi yang Digunakan
 
-- [Laravel](https://laravel.com/) 10+
+- [Laravel](https://laravel.com/) 11+
 - [PHP](https://www.php.net/) 8+
 - [Composer](https://getcomposer.org/)
 - [MySQL](https://www.mysql.com/)
